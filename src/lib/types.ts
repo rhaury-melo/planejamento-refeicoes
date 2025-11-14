@@ -64,3 +64,19 @@ export interface UserProfile {
   avatar?: string;
   createdAt: string;
 }
+
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  createdAt: string;
+}
+
+export interface Subscription {
+  id: string;
+  userId: string;
+  planId: 'free' | 'pro' | 'premium';
+  status: 'active' | 'inactive' | 'cancelled';
+  startDate: string;
+  endDate?: string;
+}

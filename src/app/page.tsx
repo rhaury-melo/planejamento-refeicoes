@@ -10,8 +10,11 @@ import { SubscriptionPlans } from './components/SubscriptionPlans';
 import { WeeklySuggestions } from './components/WeeklySuggestions';
 import { UserProfileComponent } from './components/UserProfile';
 import { PantryView } from './components/PantryView';
+import { AuthForm } from './components/AuthForm';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ChefHat, ShoppingCart, Package, Crown, Sparkles, Zap, User, Home as HomeIcon } from 'lucide-react';
+import { ChefHat, ShoppingCart, Package, Crown, Sparkles, Zap, User, Home as HomeIcon, LogOut } from 'lucide-react';
+import { getStoredUser, logout } from '@/lib/auth';
+import { Button } from '@/components/ui/button';
 
 // Banco de receitas exemplo
 const RECIPE_DATABASE: Recipe[] = [
@@ -90,11 +93,34 @@ const RECIPE_DATABASE: Recipe[] = [
 ];
 
 export default function Home() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentUser, setCurrentUser] = useState(getStoredUser());
   const [ingredients, setIngredients, ingredientsLoaded] = useLocalStorage<Ingredient[]>('menufacil-ingredients', []);
   const [shoppingList, setShoppingList, shoppingLoaded] = useLocalStorage<ShoppingItem[]>('menufacil-shopping', []);
   const [currentPlan, setCurrentPlan, planLoaded] = useLocalStorage<Recipe[]>('menufacil-plan', []);
   const [userProfile, setUserProfile, profileLoaded] = useLocalStorage<UserProfile | null>('menufacil-profile', null);
   const [activeTab, setActiveTab] = useState('profile');
+
+  // Verifica autenticação ao carregar
+  useEffect(() => {
+    const user = getStoredUser();
+    if (user) {
+      setIsAuthenticated(true);
+      setCurrentUser(user);
+    }
+  }, []);
+
+  const handleAuthSuccess = () => {
+    const user = getStoredUser();
+    setCurrentUser(user);
+    setIsAuthenticated(true);
+  };
+
+  const handleLogout = () => {
+    logout();
+    setCurrentUser(null);
+    setIsAuthenticated(false);
+  };
 
   const handleAddIngredient = (ingredient: Ingredient) => {
     setIngredients([...ingredients, ingredient]);
@@ -201,6 +227,11 @@ export default function Home() {
     setActiveTab('planner');
   };
 
+  // Se não estiver autenticado, mostra tela de login
+  if (!isAuthenticated) {
+    return <AuthForm onAuthSuccess={handleAuthSuccess} />;
+  }
+
   if (!ingredientsLoaded || !shoppingLoaded || !planLoaded || !profileLoaded) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-purple-900 via-pink-900 to-orange-900">
@@ -244,16 +275,24 @@ export default function Home() {
             </div>
             
             <div className="flex items-center gap-2">
-              {userProfile && (
+              {currentUser && (
                 <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white/10 rounded-full border border-white/20 backdrop-blur-sm">
                   <User className="w-4 h-4 text-white" />
-                  <span className="text-sm font-semibold text-white">{userProfile.name.split(' ')[0]}</span>
+                  <span className="text-sm font-semibold text-white">{currentUser.name.split(' ')[0]}</span>
                 </div>
               )}
               <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 rounded-full border border-yellow-500/30 backdrop-blur-sm">
                 <Crown className="w-4 h-4 text-yellow-400 animate-pulse" />
                 <span className="text-sm font-semibold text-yellow-200">Premium</span>
               </div>
+              <Button
+                onClick={handleLogout}
+                variant="ghost"
+                size="sm"
+                className="text-white hover:bg-white/10"
+              >
+                <LogOut className="w-4 h-4" />
+              </Button>
             </div>
           </div>
         </div>
